@@ -1,7 +1,5 @@
-import re
-
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
+from core.keystore import KeyStore
 from core.utils import Utils
 
 
@@ -17,7 +15,7 @@ class scan_snmpwalk(actionModule):
 
     def getTargets(self):
         # we are interested only in the hosts that have working snmp community strings
-        self.targets = kb.get('vuln/host/*/snmpCred')
+        self.targets = KeyStore.get('vuln/host/*/snmpCred')
 
     def process(self):
         # load any targets we are interested in
@@ -29,12 +27,12 @@ class scan_snmpwalk(actionModule):
                 if not self.seentarget(t):
                     # add the new IP to the already seen list
                     self.addseentarget(t)
-                    cstrings = kb.get("vuln/host/" + t + "/snmpCred/communityString")
+                    cstrings = KeyStore.get(f"vuln/host/{t}/snmpCred/communityString")
                     for community in cstrings:
                         command = self.config["snmpwalk"] + " -v 2c -c " + community + " " + t
-                        result = command + "\n" + Utils.execWait(command) #append command to top of output
+                        result = command + "\n" + Utils.execWait(command)  # append command to top of output
                         outfile = self.config["proofsDir"] + self.shortName + "_" + t + "_" + Utils.getRandStr(10)
                         Utils.writeFile(result, outfile)
-                        kb.add("host/" + t + "/vuln/snmpCred/output/" + outfile.replace("/", "%2F"))
+                        KeyStore.add(f"host/{t}/vuln/snmpCred/output/" + outfile.replace("/", "%2F"))
 
         return

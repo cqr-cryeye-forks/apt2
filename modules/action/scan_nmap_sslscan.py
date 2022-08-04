@@ -1,6 +1,7 @@
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
-from core.mynmap import mynmap
+from core.keystore import KeyStore
+from core.mynmap import MyNmap
+
 
 class scan_nmap_sslscan(actionModule):
     def __init__(self, config, display, lock):
@@ -17,25 +18,19 @@ class scan_nmap_sslscan(actionModule):
         self.safeLevel = 5
 
     def getTargets(self):
-        self.targets = kb.get('port/tcp/443', 'port/tcp/8443', 'service/https', 'service/ssl')
+        self.targets = KeyStore.get('port/tcp/443', 'port/tcp/8443', 'service/https', 'service/ssl')
 
     def process(self):
-        # load any targets we are interested in
         self.getTargets()
-
-        # loop over each target
         for t in self.targets:
-            ports = kb.get('service/https/' + t, 'service/ssl/host/' + t)
+            ports = KeyStore.get(f'service/https/{t}', f'service/ssl/host/{t}')
             for port in ports:
-                # verify we have not tested this host before
                 if not self.seentarget(t + str(port)):
-                    # add the new IP to the already seen list
                     self.addseentarget(t + str(port))
-                    # run nmap
-                    n = mynmap(self.config, self.display)
-                    scan_results = n.run(target=t,
-                                         flags="--script ssl-ccs-injection,ssl-cert,ssl-date,ssl-dh-params,"
-                                               "ssl-enum-ciphers,ssl-google-cert-catalog,ssl-heartbleed,"
-                                               "ssl-known-key,ssl-poodle,sslv2",
-                                         ports=str(port), vector=self.vector, filetag=t + "_" + str(port) + "_SSLSCAN")
+                    n = MyNmap(self.config, self.display)
+                    scan_results = n.run(target=t, flags="--script ssl-ccs-injection,ssl-cert,ssl-date,ssl-d"
+                                                         "h-params,ssl-enum-ciphers,ssl-google-cert-catalog,ssl-h"
+                                                         "eartbleed,ssl-known-key,ssl-poodle,sslv2",
+                                         ports=str(port), vector=self.vector, file_tag=f"{t}_{str(port)}_SSLSCAN")
+
         return

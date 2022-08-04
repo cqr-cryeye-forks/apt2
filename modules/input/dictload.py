@@ -1,8 +1,8 @@
-from core.inputModule import inputModule
-from core.keystore import KeyStore as kb
-import re
+from core.inputModule import InputModule
+from core.keystore import KeyStore
 
-class dictload(inputModule):
+
+class dictload(InputModule):
     def __init__(self, config, display, lock):
         super(dictload, self).__init__(config, display, lock)
         self.requirements = []
@@ -10,13 +10,13 @@ class dictload(inputModule):
         self.description = "Load an DICT Input file"
         self.type = "dict"
 
-    def process(self, inputfile):
+    def process(self, input_file):
         contents = []
-        with open (inputfile, "r") as myfile:
+        with open(input_file, "r") as myfile:
             contents = myfile.readlines()
 
         for line in contents:
             parts = line.strip().split(':=')
-            kb.add("osint/" + parts[0].lower() + "/" + parts[1])
-            self.fire("new" + parts[0])
+            KeyStore.add(f"osint/{parts[0].lower()}/{parts[1]}")
+            self.fire(f"new{parts[0]}")
         return

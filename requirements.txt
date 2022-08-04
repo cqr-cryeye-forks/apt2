@@ -1,0 +1,8 @@
+git+https://github.com/cqr-cryeye-forks/unqlite-python#egg=unqlite
+msgpack~=1.0.4
+scapy~=2.4.5
+cython
+pysmb==1.2.8
+yattag==1.14.0
+impacket~=0.10.0
+

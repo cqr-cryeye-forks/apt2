@@ -1,8 +1,8 @@
-from core.inputModule import inputModule
-from core.mynmap import mynmap
+from core.inputModule import InputModule
+from core.mynmap import MyNmap
 
 
-class nmaploadxml(inputModule):
+class nmaploadxml(InputModule):
     def __init__(self, config, display, lock):
         super(nmaploadxml, self).__init__(config, display, lock)
         self.requirements = ["nmap"]
@@ -10,7 +10,7 @@ class nmaploadxml(inputModule):
         self.description = "Load an NMap XML file"
         self.type = "nmap"
 
-    def process(self, inputfile):
-        n = mynmap(self.config, self.display)
-        n.loadXMLFile(inputfile, "nmapFile")
+    def process(self, input_file):
+        n = MyNmap(self.config, self.display)
+        n.loadXMLFile(input_file, "nmapFile")
         return

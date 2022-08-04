@@ -1,17 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import time
-
-import core.msfrpc2 as msfrpc
 from threading import Lock
 
+import core.msfrpc2 as msfrpc
 
-class myMsf():
+
+class MyMsf:
     lock = Lock()
 
-    def __init__(self, host="127.0.0.1", port="55552", user="msf", password="msf", uri="/api/", ssl=False,
-                 createWorkspace=True):
+    def __init__(self, host="127.0.0.1", port: int | str = "55552", user="msf", password="msf", uri="/api/", ssl=False,
+                 create_workspace: bool = True):
         self.host = host
-        self.port = port
+        self.port: str = str(port)
         self.user = user
         self.password = password
         self.uri = uri
@@ -23,7 +23,7 @@ class myMsf():
 
         self._connect(host=self.host, port=self.port, uri=self.uri, ssl=self.ssl)
         self._login(user=self.user, password=self.password)
-        self._initConnection(createWorkspace)
+        self._init_connection(create_workspace)
 
     def _connect(self, host="127.0.0.1", port="55552", uri="/api/", ssl=False):
         self.conn = msfrpc.Msfrpc({'host': host, 'port': port, 'uri': uri, 'ssl': ssl})
@@ -34,42 +34,41 @@ class myMsf():
             res = self.conn.login(user=user, password=password)
             self.authenticated = True
         except Exception as e:
-            pass
-            # print e
+            print(e)
 
-    def _initConnection(self, createWorkspace=True):
-        if (not self.authenticated):
+    def _init_connection(self, create_workspace=True):
+        if not self.authenticated:
             return ""
 
         self.execute("set THREADS 10\n")
 
-        if (createWorkspace):
-            self.createWorkspace("autopentest")
+        if create_workspace:
+            self.create_workspace("autopentest")
             self.execute("workspace autopentest\n")
 
-        self.getResult()
+        self.get_result()
 
-    def _getConsoleId(self):
-        if (not self.authenticated):
+    def _get_console_id(self):
+        if not self.authenticated:
             return ""
 
-        if (not self.id):
+        if not self.id:
             console = self.conn.call('console.create', opts=[])
-            if ('id' in console):
+            if 'id' in console:
                 self.id = console['id']
             else:
-                print "FAILED!!!"
+                print("FAILED!!!")
         return self.id
 
-    def isAuthenticated(self):
+    def is_authenticated(self):
         return self.authenticated
 
-    def createWorkspace(self, workspace):
-        if (not self.authenticated):
+    def create_workspace(self, workspace):
+        if not self.authenticated:
             return ""
 
-        if (not self.id):
-            self._getConsoleId()
+        if not self.id:
+            self._get_console_id()
 
         self.workspace = workspace
 
@@ -80,41 +79,38 @@ class myMsf():
         return result
 
     def execute(self, cmd):
-        if (not self.authenticated):
+        if not self.authenticated:
             return ""
 
-        if (not self.id):
-            self._getConsoleId()
+        if not self.id:
+            self._get_console_id()
 
         result = ""
-
-        if (self.id):
+        if self.id:
             result = self.conn.call('console.write', [self.id, cmd])
             self.sleep(2)
 
         return result
 
     def sleep(self, sec):
-        if (not self.authenticated):
+        if not self.authenticated:
             return ""
 
         time.sleep(sec)
         return
 
-    def getResult(self):
-        if (not self.authenticated):
+    def get_result(self):
+        if not self.authenticated:
             return ""
 
         result = ""
-        if (self.id):
+        if self.id:
             while True:
-                res = self.conn.call('console.read', [self.id])
-                if res and 'data' in res:
-                    if len(res['data']) > 1:
+                if res := self.conn.call('console.read', [self.id]):
+                    if 'data' in res and len(res['data']) > 1:
                         result += res['data']
 
-                if res and 'busy' in res:
-                    if res['busy'] == True:
+                    if 'busy' in res and res['busy'] is True:
                         self.sleep(1)
                         continue
 
@@ -122,12 +118,10 @@ class myMsf():
         return result
 
     def cleanup(self):
-        if (not self.authenticated):
+        if not self.authenticated:
             return ""
 
-        if (self.id):
-            result = self.conn.call('console.destroy', [self.id])
-
+        result = self.conn.call('console.destroy', [self.id]) if self.id else ''
         self.id = None
         return result
 
@@ -139,7 +133,7 @@ if __name__ == "__main__":
     target = "192.168.1.136"
 
     # connect to msfrpc
-    msf = myMsf(host="127.0.0.1", port=55552, user="msf", password="mypass")
+    msf = MyMsf(host="127.0.0.1", port=55552, user="msf", password="mypass")
 
     # msf.execute("use auxiliary/scanner/smb/smb_enumusers\n")
     # msf.execute("set RHOSTS %s\n" % target)
@@ -150,7 +144,6 @@ if __name__ == "__main__":
     #    msf.execute("set SMBuser Administrator\n")
     #    msf.execute("set SMBpass password\n")
     #    msf.execute("exploit -z\n")
-
 
     #    msf.execute("use exploit/windows/smb/ms08_067_netapi\n")
     #    msf.execute("set TARGET 0\n")
@@ -163,18 +156,18 @@ if __name__ == "__main__":
     #    msf.execute("exploit -j\n")
 
     #    msf.sleep(5)
-    #    print msf.getResult()
+    #    print msf.get_result()
 
     msf.execute("sessions -i\n")
     msf.sleep(1)
-    print msf.getResult()
+    print(msf.get_result())
 
     msf.execute("sessions -i 2\n")
     msf.execute("getuid\n")
     msf.execute("sysinfo\n")
     msf.execute("background\n")
-    print msf.getResult()
+    print(msf.get_result())
 
     msf.execute("sessions -i\n")
     msf.sleep(1)
-    print msf.getResult()
+    print(msf.get_result())

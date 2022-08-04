@@ -1,10 +1,11 @@
 try:
-    import xml.etree.cElementTree as ET
+    import xml.etree.cElementTree as ElementTree
 except ImportError:
-    import xml.etree.ElementTree as ET
+    import xml.etree.ElementTree as ElementTree
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
-from core.mynmap import mynmap
+from core.keystore import KeyStore
+from core.mynmap import MyNmap
+
 
 class scan_nmap_nfsshares(actionModule):
     def __init__(self, config, display, lock):
@@ -19,10 +20,10 @@ class scan_nmap_nfsshares(actionModule):
         self.safeLevel = 5
 
     def getTargets(self):
-        self.targets = kb.get('port/tcp/111', 'port/udp/111')
+        self.targets = KeyStore.get('port/tcp/111', 'port/udp/111')
 
     def myProcessPortScript(self, host, proto, port, script, outfile):
-        outfile = outfile + ".xml"
+        outfile = f"{outfile}.xml"
         scriptid = script.attrib['id']
         output = script.attrib['output']
         if (scriptid == "nfs-ls"):
@@ -45,15 +46,13 @@ class scan_nmap_nfsshares(actionModule):
                             shareinfo = rights.replace("/", "%2F")
                         if elem.attrib["key"] == "files":
                             for file in elem:
-                                newfile = {}
-                                for fileprop in file:
-                                    newfile[fileprop.attrib["key"]] = fileprop.text
+                                newfile = {fileprop.attrib["key"]: fileprop.text for fileprop in file}
                                 files[newfile["filename"]] = newfile
-                    kb.add("share/nfs/" + host + "/" + sharename + "/" + str("Info: " + shareinfo))
-#                    for file in files:
-#                        # TODO - Maybe revisit adding more file properties here in addition to names
-#                        kb.add("host/" + host + "/shares/NFS/" + sharename + "/Files/" + str(file).replace("/", "%2F"))
-#                        print ("host/" + host + "/shares/NFS/" + sharename + "/Files/" + str(file).replace("/", "%2F"))
+                    KeyStore.add(f"share/nfs/{host}/{sharename}/" + str(f"Info: {shareinfo}"))
+            #                    for file in files:
+            #                        # TODO - Maybe revisit adding more file properties here in addition to names
+            #                        KeyStore.add("host/" + host + "/shares/NFS/" + sharename + "/Files/" + str(file).replace("/", "%2F"))
+            #                        print ("host/" + host + "/shares/NFS/" + sharename + "/Files/" + str(file).replace("/", "%2F"))
 
             if readAccess:
                 self.addVuln(host, "nfs-read", {"port": "111", "output": outfile.replace("/", "%2F")})
@@ -63,19 +62,14 @@ class scan_nmap_nfsshares(actionModule):
                 self.fire("nfsWrite")
 
     def process(self):
-        # load any targets we are interested in
         self.getTargets()
-
-        # loop over each target
         for t in self.targets:
-            # verify we have not tested this host before
             if not self.seentarget(t):
-                # add the new IP to the already seen list
                 self.addseentarget(t)
-                self.display.verbose(self.shortName + " - Connecting to " + t)
-                # run nmap
-                n = mynmap(self.config, self.display, portScriptFunc=self.myProcessPortScript)
-                scan_results = n.run(target=t, flags="--script nfs-ls,nfs-showmount", ports="111", vector=self.vector, filetag=t + "_NFSSHARESCAN")
+                self.display.verbose(f"{self.shortName} - Connecting to {t}")
+                n = MyNmap(self.config, self.display, port_script_func=self.myProcessPortScript)
 
-                                
+                scan_results = n.run(target=t, flags="--script nfs-ls,nfs-showmount", ports="111", vector=self.vector,
+                                     file_tag=f"{t}_NFSSHARESCAN")
+
         return

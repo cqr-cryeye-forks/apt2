@@ -1,7 +1,7 @@
 from core.events import EventHandler
 
 
-class reportModule(object):
+class ReportModule(object):
     def __init__(self, config, display, lock):
         self.display = display
         self.config = config

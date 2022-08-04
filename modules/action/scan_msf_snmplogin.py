@@ -1,11 +1,10 @@
 import re
 
-from core.msfActionModule import msfActionModule
-from core.keystore import KeyStore as kb
-from core.utils import Utils
+from core.keystore import KeyStore
+from core.msfActionModule import MsfActionModule
 
 
-class scan_msf_snmplogin(msfActionModule):
+class scan_msf_snmplogin(MsfActionModule):
     def __init__(self, config, display, lock):
         super(scan_msf_snmplogin, self).__init__(config, display, lock)
         self.triggers = ["newPort_tcp_161"]
@@ -17,14 +16,14 @@ class scan_msf_snmplogin(msfActionModule):
 
     def getTargets(self):
         # we are interested only in the hosts that have UDP 161 open
-        self.targets = kb.get('port/udp/161')
+        self.targets = KeyStore.get('port/udp/161')
 
     def process(self):
         # load any targets we are interested in
         self.getTargets()
 
         if len(self.targets) > 0:
-            # If any results are succesful, this will become true and Fire will be called in the end
+            # If any results are successful, this will become true and fire will be called in the end
             callFire = False
             # loop over each target
             for t in self.targets:
@@ -33,15 +32,10 @@ class scan_msf_snmplogin(msfActionModule):
                     # add the new IP to the already seen list
                     self.addseentarget(t)
 
-                    cmd = {
-                            'config':[
-                                    "use auxiliary/scanner/snmp/snmp_login",
-                                    "set RHOSTS %s" % t,
-                                    "set VERSION 2c"
-                                ],
-                            'payload':'none'}
-                    result, outfile = self.msfExec(t, cmds)
+                    cmd = {'config': ["use auxiliary/scanner/snmp/snmp_login", f"set RHOSTS {t}", "set VERSION 2c"],
+                           'payload': 'none'}
 
+                    result, outfile = self.execute_msf(t, cmd)
 
                     parts = re.findall(".*LOGIN SUCCESSFUL.*", result)
                     for part in parts:

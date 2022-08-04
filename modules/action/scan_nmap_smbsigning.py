@@ -1,10 +1,10 @@
 try:
-    import xml.etree.cElementTree as ET
+    import xml.etree.cElementTree as ElementTree
 except ImportError:
-    import xml.etree.ElementTree as ET
+    import xml.etree.ElementTree as ElementTree
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
-from core.mynmap import mynmap
+from core.keystore import KeyStore
+from core.mynmap import MyNmap
 
 
 class scan_nmap_smbsigning(actionModule):
@@ -20,34 +20,37 @@ class scan_nmap_smbsigning(actionModule):
         self.safeLevel = 5
 
     def getTargets(self):
-        self.targets = kb.get('port/tcp/139', 'port/tcp/445')
+        self.targets = KeyStore.get('port/tcp/139', 'port/tcp/445')
 
     def myProcessHostScript(self, host, script, outfile):
-        outfile = outfile + ".xml"
         scriptid = script.attrib['id']
-        output = script.attrib['output']
-        if (scriptid == "smb-security-mode"):
-            account_used = ""
-            authentication_level = ""
-            challenge_response = ""
-            message_signing = ""
-            for elem in script.findall("elem"):
-                if elem.attrib["key"] == "account_used":
-                    account_used = elem.text
-                elif elem.attrib["key"] == "authentication_level":
-                    authentication_level = elem.text
-                elif elem.attrib["key"] == "challenge_response":
-                    challenge_response = elem.text
-                elif elem.attrib["key"] == "message_signing":
-                    message_signing = elem.text
-            if "disabled" in message_signing:
-                self.addVuln(host, "SMBSigningDisabled", {"port": "445",
-                                                        "output": outfile,
-                                                        "Account Used": account_used,
-                                                        "Authentication Level": authentication_level,
-                                                        "Challenge Response": challenge_response,
-                                                        "Message Signing": message_signing})
-                self.fire("SMBSigningDisabled")
+        if scriptid == "smb-security-mode":
+            outfile = f"{outfile}.xml"
+            output = script.attrib['output']
+            self._extracted_from_myProcessHostScript_6(script, host, outfile)
+
+    # TODO Rename this here and in `myProcessHostScript`
+    def _extracted_from_myProcessHostScript_6(self, script, host, outfile):
+        account_used = ""
+        authentication_level = ""
+        challenge_response = ""
+        message_signing = ""
+        for elem in script.findall("elem"):
+            if elem.attrib["key"] == "account_used":
+                account_used = elem.text
+            elif elem.attrib["key"] == "authentication_level":
+                authentication_level = elem.text
+            elif elem.attrib["key"] == "challenge_response":
+                challenge_response = elem.text
+            elif elem.attrib["key"] == "message_signing":
+                message_signing = elem.text
+        if "disabled" in message_signing:
+            self.addVuln(host, "SMBSigningDisabled", {"port": "445", "output": outfile, "Account Used": account_used,
+                                                      "Authentication Level": authentication_level,
+                                                      "Challenge Response": challenge_response,
+                                                      "Message Signing": message_signing})
+
+            self.fire("SMBSigningDisabled")
 
     def process(self):
         # load any targets we are interested in
@@ -60,7 +63,8 @@ class scan_nmap_smbsigning(actionModule):
                 # add the new IP to the already seen list
                 self.addseentarget(t)
                 # run nmap
-                n = mynmap(self.config, self.display, hostScriptFunc=self.myProcessHostScript)
-                scan_results = n.run(target=t, flags="--script smb-security-mode", ports="445", vector=self.vector, filetag=t + "_SMBSIGNINGSCAN")
+                n = MyNmap(self.config, self.display, host_script_func=self.myProcessHostScript)
+                scan_results = n.run(target=t, flags="--script smb-security-mode", ports="445", vector=self.vector,
+                                     file_tag=f"{t}_SMBSIGNINGSCAN")
 
         return

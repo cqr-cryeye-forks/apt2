@@ -1,41 +1,39 @@
 from multiprocessing.pool import ThreadPool
-from scapy.all import *
+
+from scapy.layers.inet import IP, TCP
+from scapy.sendrecv import sniff
 
 
-class pktcap():
-    def capture(self, filter="", timeout=60, count=1, srcip="", dstip=""):
-        results = "Packet Capture  of (%s -> %s) filter (%s)\n\n" % (srcip, dstip, filter)
-        pkts = sniff(filter=filter, timeout=timeout, count=count)
-        for pkt in pkts:
+class PktCapture:
+
+    @staticmethod
+    def capture(filter_str="", timeout=60, count=1, srcip="", dstip=""):
+        results = "Packet Capture  of (%s -> %s) filter (%s)\n\n" % (srcip, dstip, filter_str)
+        packets = sniff(filter=filter_str, timeout=timeout, count=count)
+        for pkt in packets:
             ip_src = ""
             ip_dst = ""
-            tcp_sport = 0
-            tcp_dport = 0
+            # tcp_sport = 0
+            # tcp_dport = 0
             tcp_payload = ""
             if IP in pkt:
                 ip_src = str(pkt[IP].src)
                 ip_dst = str(pkt[IP].dst)
             if TCP in pkt:
-                tcp_sport = int(pkt[TCP].sport)
-                tcp_dport = int(pkt[TCP].dport)
+                # tcp_sport = int(pkt[TCP].sport)
+                # tcp_dport = int(pkt[TCP].dport)
                 tcp_payload = str(pkt[TCP].payload)
 
-            if (tcp_payload.strip() == ""):
+            if not tcp_payload.strip():
                 continue
 
-            if (srcip == "") and (dstip == ""):
-                results += ">><< %s\n" % (tcp_payload)
-            elif (srcip == ""):
-                if (ip_dst == dstip):
-                    results += ">>>> %s\n" % (tcp_payload)
-                else:
-                    results += "<<<< %s\n" % (tcp_payload)
+            if (srcip != "" or dstip != "") and srcip == "" and (ip_dst == dstip) or (srcip != "" or dstip != "") \
+                    and srcip != "" and (ip_src == srcip):
+                results += ">>>> %s\n" % tcp_payload
+            elif (srcip != "" or dstip != "") and srcip == "" or srcip != "":
+                results += "<<<< %s\n" % tcp_payload
             else:
-                if (ip_src == srcip):
-                    results += ">>>> %s\n" % (tcp_payload)
-                else:
-                    results += "<<<< %s\n" % (tcp_payload)
-
+                results += ">><< %s\n" % tcp_payload
         return results
 
 
@@ -43,21 +41,21 @@ class pktcap():
 # main test code
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
-    filter = "(host 192.168.1.8 or host 192.168.124) and tcp and port 21"
-    pktcount = 20
-    pkttimeout = 50
+    filter_str = "(host 192.168.1.8 or host 192.168.124) and tcp and port 21"
+    pkt_count = 20
+    pkt_timeout = 50
     srcip = "192.168.1.124"
     dstip = "192.168.1.8"
 
     pool = ThreadPool(processes=1)
 
-    p = pktcap()
+    p = PktCapture()
 
-    #    print p.capture(filter=filter, timeout=pkttimeout, count=pktcount, srcip=srcip, dstip=dstip)
+    #    print p.capture(filter=filter_str, timeout=pkt_timeout, count=pkt_count, srcip=srcip, dstip=dstip)
     # tuple of args for foo, please note a "," at the end of the arguments
-    async_result = pool.apply_async(p.capture, (filter, pkttimeout, pktcount, srcip, dstip,))
+    async_result = pool.apply_async(p.capture, (filter_str, pkt_timeout, pkt_count, srcip, dstip,))
 
     # Do some other stuff in the main process
-    print "hi"
+    print("hi")
 
-    print async_result.get()
+    print(async_result.get())

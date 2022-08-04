@@ -1,7 +1,8 @@
+import contextlib
 import socket
 
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
+from core.keystore import KeyStore
 
 
 class scan_gethostname(actionModule):
@@ -17,25 +18,17 @@ class scan_gethostname(actionModule):
         self.safeLevel = 5
 
     def getTargets(self):
-        #get all hosts
-        self.targets = kb.get('host')
+        # get all hosts
+        self.targets = KeyStore.get('host')
 
     def process(self):
-        # load any targets we are interested in
         self.getTargets()
-
-        # loop over each target
         for t in self.targets:
-            # verify we have not tested this host before
             if not self.seentarget(t):
-                # add the new IP to the already seen list
                 self.addseentarget(t)
-                self.display.verbose(self.shortName + " - Connecting to " + t)
-                try:
+                self.display.verbose(f"{self.shortName} - Connecting to {t}")
+                with contextlib.suppress(Exception):
                     results = socket.gethostbyaddr(t)
                     self.fire("newHostname")
-                    kb.add('host/' + t + '/hostname/' + results[0])
-                except:
-                    pass
-
+                    KeyStore.add(f'host/{t}/hostname/{results[0]}')
         return

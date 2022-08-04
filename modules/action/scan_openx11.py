@@ -1,7 +1,5 @@
-import re
-
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
+from core.keystore import KeyStore
 from core.utils import Utils
 
 
@@ -12,12 +10,13 @@ class scan_openx11(actionModule):
         self.requirements = ["xwd", "convert"]
         self.title = "Attempt Login To Open X11 Servicei and Get Screenshot"
         self.shortName = "OpenX11"
-        self.description = "execute [xwd -root -screen -silent -display <SYSTEM IP>:0 | convert - <SYSTEM IP>.png] on each target"
+        self.description = "execute [xwd -root -screen -silent -display <SYSTEM IP>:0 | convert - <SYSTEM " \
+                           "IP>.png] on each target"
         self.safeLevel = 5
 
     def getTargets(self):
         # we are interested only in the hosts that have TCP 6000 open
-        self.targets = kb.get('port/tcp/6000')
+        self.targets = KeyStore.get('port/tcp/6000')
 
     def process(self):
         # load any targets we are interested in
@@ -33,10 +32,12 @@ class scan_openx11(actionModule):
                     command = self.config["xwd"] + " -root -screen -silent -display " + t + ":0"
                     result = Utils.execWait(command)
                     if "unable to open display" not in result:
-                        outfile = self.config["proofsDir"] + self.shortName + "_" + t + "_" + Utils.getRandStr(10) + ".png"
-                        command = self.config["xwd"] + " -root -screen -silent -display " + t + ":0 | convert - " + outfile
+                        outfile = self.config["proofsDir"] + self.shortName + "_" + t + "_" + Utils.getRandStr(
+                            10) + ".png"
+                        command = self.config["xwd"] + " -root -screen -silent -display " + t + \
+                                  ":0 | convert - " + outfile
                         self.addVuln(t, "openX11",
-                                {"port": "6000", "output": outfile.replace("/", "%2F")})
+                                     {"port": "6000", "output": outfile.replace("/", "%2F")})
 
                         self.fire("x11Access")
 

@@ -1,4 +1,4 @@
-import Queue
+import queue
 import time
 from threading import Thread
 
@@ -35,7 +35,7 @@ class EventObject():
 
 
 class EventQueue():
-    eventQueue = Queue.Queue()
+    eventQueue = queue.Queue()
 
     @staticmethod
     def pop():

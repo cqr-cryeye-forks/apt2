@@ -1,7 +1,7 @@
 from core.events import EventHandler
 
 
-class inputModule(object):
+class InputModule(object):
     def __init__(self, config, display, lock):
         self.display = display
         self.config = config
@@ -23,13 +23,12 @@ class inputModule(object):
     def getRequirements(self):
         return self.requirements
 
-    def process(self):
+    def process(self, input_file):
         return
 
-    def go(self, inputfile):
-        self.display.verbose("-> Running : " + self.getTitle())
-        return self.process(inputfile)
+    def go(self, input_file):
+        self.display.verbose(f"-> Running : {self.getTitle()}")
+        return self.process(input_file)
 
     def fire(self, trigger):
-        EventHandler.fire(trigger + ":INPUTFile")
-
+        EventHandler.fire(f"{trigger}:INPUTFile")

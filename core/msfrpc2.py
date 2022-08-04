@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # MSF-RPC - A  Python library to facilitate MSG-RPC communication with Metasploit
 # Ryan Linn  - RLinn@trustwave.com
 # Copyright (C) 2011 Trustwave
@@ -12,12 +12,14 @@
 # You should have received a copy of the GNU General Public License along with this program. If not,
 # see <http://www.gnu.org/licenses/>.
 
-import httplib
+import http.client
 import sys
+
 try:
     import msgpack
-except:
+except ImportError:
     sys.exit("[!] Install the msgpack library: pip install msgpack-python")
+
 
 class Msfrpc:
     class MsfError(Exception):
@@ -31,7 +33,9 @@ class Msfrpc:
         def __init__(self, msg):
             self.msg = msg
 
-    def __init__(self, opts=[]):
+    def __init__(self, opts=None):
+        if opts is None:
+            opts = []
         self.host = opts.get('host') or "127.0.0.1"
         self.port = opts.get('port') or 55552
         self.uri = opts.get('uri') or "/api/"
@@ -40,24 +44,25 @@ class Msfrpc:
         self.token = False
         self.headers = {"Content-type": "binary/message-pack"}
         if self.ssl:
-            self.client = httplib.HTTPSConnection(self.host, self.port)
+            self.client = http.client.HTTPSConnection(self.host, self.port)
         else:
-            self.client = httplib.HTTPConnection(self.host, self.port)
+            self.client = http.client.HTTPConnection(self.host, self.port)
 
-    def encode(self, data):
+    @staticmethod
+    def encode(data):
         return msgpack.packb(data)
 
-    def decode(self, data):
+    @staticmethod
+    def decode(data):
         return msgpack.unpackb(data)
 
-    def call(self, meth, opts=[]):
-        if meth != "auth.login":
-            if not self.authenticated:
-                raise self.MsfAuthError("MsfRPC: Not Authenticated")
-
+    def call(self, meth, opts=None):
+        if opts is None:
+            opts = []
+        if meth != "auth.login" and not self.authenticated:
+            raise self.MsfAuthError("MsfRPC: Not Authenticated")
         if meth != "auth.login":
             opts.insert(0, self.token)
-
         opts.insert(0, meth)
         params = self.encode(opts)
         self.client.request("POST", self.uri, params, self.headers)
@@ -66,12 +71,11 @@ class Msfrpc:
 
     def login(self, user, password):
         ret = self.call('auth.login', [user, password])
-        if ret.get('result') == 'success':
-            self.authenticated = True
-            self.token = ret.get('token')
-            return True
-        else:
+        if ret.get('result') != 'success':
             raise self.MsfAuthError("MsfRPC: Authentication failed")
+        self.authenticated = True
+        self.token = ret.get('token')
+        return True
 
 
 if __name__ == '__main__':
@@ -86,9 +90,9 @@ if __name__ == '__main__':
     mod = client.call('module.exploits')
 
     # Grab the first item from the modules value of the returned dict
-    print "Compatible payloads for : %s\n" % mod['modules'][0]
+    print("Compatible payloads for : %s\n" % mod['modules'][0])
 
     # Get the list of compatible payloads for the first option
     ret = client.call('module.compatible_payloads', [mod['modules'][0]])
     for i in (ret.get('payloads')):
-        print "\t%s" % i
+        print("\t%s" % i)

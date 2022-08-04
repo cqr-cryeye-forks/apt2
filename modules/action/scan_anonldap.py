@@ -1,6 +1,7 @@
 import re
+
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
+from core.keystore import KeyStore
 from core.utils import Utils
 
 
@@ -17,7 +18,7 @@ class scan_anonldap(actionModule):
         self.safeLevel = 5
 
     def getTargets(self):
-        self.targets = kb.get('service/ldap')
+        self.targets = KeyStore.get('service/ldap')
 
     def process(self):
         # load any targets we are interested in
@@ -28,7 +29,7 @@ class scan_anonldap(actionModule):
         for t in self.targets:
             # verify we have not tested this host before
             if not self.seentarget(t):
-                self.display.verbose(self.shortName + " - Connecting to " + t)
+                self.display.verbose(f"{self.shortName} - Connecting to {t}")
                 # add the new IP to the already seen list
                 self.addseentarget(t)
                 # make outfile
@@ -42,8 +43,9 @@ class scan_anonldap(actionModule):
                 parts = re.findall("ref: .*", result)
                 for part in parts:
                     callFire = True
-                    self.addVuln(t, "AnonymousLDAP", {"port": "389", "message": str(part).replace("/", "%2F"), "output": outfile.replace("/", "%2F")})
+                    self.addVuln(t, "AnonymousLDAP", {"port": "389", "message": str(part).replace("/", "%2F"),
+                                                      "output": outfile.replace("/", "%2F")})
         if callFire:
-                self.fire("anonymousLDAP")
+            self.fire("anonymousLDAP")
 
         return

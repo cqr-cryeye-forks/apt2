@@ -5,12 +5,12 @@
 
 apt-get update
 apt-get upgrade
-apt-get install git python-pip
-# git clone https://github.com/MooseDojo/apt2.git
+apt-get install git python3-pip
+# git clone https://github.com/cqr-cryeye-forks/apt2.git
 # cd apt2
-# python setup.py install
+# python3 setup.py install
 # ./apt2.py -h
 
 echo "At this point, run 'python apt2.py' and look for any line such as:"
-echo "[!] Module ‘xxxxxxxx’ disabled. Dependency required: '['xxxxxxx']'"
+echo "[!] Module ‘xxxxxxxx’ disabled. Dependency required: '['xxxxxxxx']'"
 echo "and make sure you install and missing tools as needed"

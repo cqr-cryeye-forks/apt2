@@ -1,5 +1,5 @@
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
+from core.keystore import KeyStore
 from core.utils import Utils
 
 
@@ -18,28 +18,23 @@ class scan_httpscreenshot(actionModule):
 
     def getTargets(self):
         # we are interested in all hosts
-        self.targets = kb.get('service/http', 'service/https')
+        self.targets = KeyStore.get('service/http', 'service/https')
 
     def processTarget(self, t, port):
         if not self.seentarget(t + str(port)):
             self.addseentarget(t + str(port))
-            self.display.verbose(self.shortName + " - Connecting to " + t)
+            self.display.verbose(f"{self.shortName} - Connecting to {t}")
             outfile = self.config["proofsDir"] + self.shortName + "_" + t + "_" + str(port) + "_" + Utils.getRandStr(
                 10) + ".png"
-            url = "http://" + t + ":" + str(port)
+            url = f"http://{t}:{str(port)}"
             Utils.webScreenCap(url, outfile)
 
     def process(self):
-        # load any targets we are interested in
         self.getTargets()
-
-        # loop over each target
         for t in self.targets:
-            # verify we have not tested this host before
-            ports = kb.get('service/http/' + t + '/tcp', 'service/https/' + t + '/tcp')
+            ports = KeyStore.get(f'service/http/{t}/tcp', f'service/https/{t}/tcp')
             for port in ports:
                 self.processTarget(t, port)
                 for hostname in self.getHostnames(t):
                     self.processTarget(hostname, port)
-
         return

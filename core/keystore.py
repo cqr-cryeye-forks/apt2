@@ -1,40 +1,37 @@
 import ast
+import sys
+
 try:
     from unqlite import UnQLite
-except:
-    sys.exit("[!] Install the UnQlite library: pip install unqlite") 
+except ImportError:
+    sys.exit("[!] Install the UnQlite library: pip install unqlite")
 
-from utils import Utils
+from .utils import Utils
+
 
 class KeyStore(object):
     db = UnQLite()
 
     # =================================================
-    # "private" mathods
+    # "private" methods
     # =================================================
 
     # get the list of values for a given key
     @staticmethod
     def _get(item):
         item = item.rstrip('/')
-        values = list()
-
-        # does the request contain a wild card value?
+        values = []
         if "/*/" in item:
             parts = item.split("*")
             left = parts[0].split()[-1]
             right = parts[1].split()[0] if parts[1].split() else ''
-
             temp_vals = KeyStore.get(left)
-            if (isinstance(temp_vals, basestring)):
+            if isinstance(temp_vals, str):
                 temp_vals = ast.literal_eval(temp_vals)
-            for temp_val in temp_vals:
-                if left + temp_val + right in KeyStore.db:
-                    values.append(temp_val)
-        else:
-            if item in KeyStore.db:
-                values = KeyStore.db[item]
+            values.extend(temp_val for temp_val in temp_vals if left + temp_val + right in KeyStore.db)
 
+        elif item in KeyStore.db:
+            values = KeyStore.db[item]
         return values
 
     # =================================================
@@ -45,14 +42,14 @@ class KeyStore(object):
     @staticmethod
     def add(item):
         item = item.rstrip('/')
-        if (item not in KeyStore.db):
-            KeyStore.db[item] = list()
-        if (item.count('/') > 0):
+        if item not in KeyStore.db:
+            KeyStore.db[item] = []
+        if item.count('/') > 0:
             (key, value) = item.rsplit('/', 1)
-            values = list()
+            values = []
             if key in KeyStore.db:
                 values = KeyStore._get(key)
-                if (isinstance(values, basestring)):
+                if isinstance(values, str):
                     values = ast.literal_eval(values)
             if value not in values:
                 values.append(value)
@@ -62,28 +59,25 @@ class KeyStore(object):
     # return a list of values for a given key
     @staticmethod
     def get(*items):
-        result = list()
-
+        result = []
         for item in items:
             r2 = KeyStore._get(item)
-            if (isinstance(r2, basestring)):
+            if isinstance(r2, str):
                 r2 = ast.literal_eval(r2)
             result += r2
-        if result:
-            return sorted(set(result))
-        return []
+        return sorted(set(result)) if result else []
 
     # remove a given key or value
     @staticmethod
     def rm(key):
         return
 
-    # print out current KB
+    # print out current KeyStore
     @staticmethod
     def debug():
         with KeyStore.db.cursor() as cursor:
             for key, value in cursor:
-                print key, '=>', value
+                print(key, '=>', value)
         return
 
     # dump keystore to text
@@ -111,11 +105,12 @@ class KeyStore(object):
             KeyStore.add(line)
         return
 
+
 # -----------------------------------------------------------------------------
 # main test code
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
-    print "-------------------------------------------------------------------"
+    print("-------------------------------------------------------------------")
     #    KeyStore.add("host/1.2.3.4/port/111")
     #    KeyStore.add("host/a.b.c.d/port/80")
     #    KeyStore.add("host/a.b.c.d/port/80/bob")
@@ -128,13 +123,13 @@ if __name__ == "__main__":
     KeyStore.add("host/2.2.2.2/port/80")
     KeyStore.add("host/3.3.3.3/port/22")
     KeyStore.add("host/4.4.4.4/port/25")
-    print "-------------------------------------------------------------------"
-    #KeyStore.debug()
-    #print KeyStore.dump()
+    print("-------------------------------------------------------------------")
+    # KeyStore.debug()
+    # print KeyStore.dump()
 
-    print KeyStore.get("host/*/port/80")
-    print KeyStore.get("host/2.2.2./port", "host/1.1.1.1/port")
-    #print KeyStore.get("host")
+    print(KeyStore.get("host/*/port/80"))
+    print(KeyStore.get("host/2.2.2./port", "host/1.1.1.1/port"))
+    # print KeyStore.get("host")
 #    KeyStore.add("service/http/host/1.1.1.1/tcpport/80/product/apache/version/1.1.1.1.1.1.1")
 #    KeyStore.add("service/http/host/1.1.1.1/tcpport/8080/product/apache/version/1.1.1.3.3.3.3")
 #    KeyStore.add("service/https/host/2.2.2.2/tcpport/443/product/nginx/version/a.b.c.d")

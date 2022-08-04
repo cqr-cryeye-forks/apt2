@@ -1,13 +1,15 @@
+import contextlib
 import re
-from cStringIO import StringIO
+from io import StringIO
 
 try:
     from smb.SMBConnection import SMBConnection
-except ImportError:
-    raise ImportError('Missing pysmb library. To install run: pip install pysmb')
+except ImportError as e:
+    raise ImportError('Missing pysmb library. To install run: pip install pysmb') from e
+
 
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
+from core.keystore import KeyStore
 from core.utils import Utils
 
 
@@ -28,8 +30,8 @@ class scan_searchsmbshare(actionModule):
 
     def getTargets(self):
         # we are interested in all hosts
-        self.targets = kb.get('port/tcp/445', 'port/tcp/139')
-        self.targets2 = kb.get('service/smb')
+        self.targets = KeyStore.get('port/tcp/445', 'port/tcp/139')
+        self.targets2 = KeyStore.get('service/smb')
 
     def searchDir(self, host, conn, share, path, depth=0):
         if depth > 5:
@@ -41,24 +43,22 @@ class scan_searchsmbshare(actionModule):
 
             for name in names:
                 if name.isDirectory:
-                    if name.filename not in [u'.', u'..']:
+                    if name.filename not in ['.', '..']:
                         self.searchDir(conn, host, share, path + name.filename + '/', depth + 1)
                 else:
                     for pattern in self.filepatterns:
-                        try:
+                        with contextlib.suppress(re.error):
                             re.compile(pattern)
-                            result = re.match(pattern, name.filename)
-                            if (result):
-                                #download the file
-                                outfile = self.config["proofsDir"] + self.shortName + "_" + host + "_" + share + "_" + name.filename.replace("/", "-") + "_" + Utils.getRandStr(10)
+                            if result := re.match(pattern, name.filename):
+                                # download the file
+                                outfile = self.config[
+                                              "proofsDir"] + self.shortName + "_" + host + "_" + share + "_" + name.filename.replace(
+                                    "/", "-") + "_" + Utils.getRandStr(10)
                                 temp_fh = StringIO()
                                 conn.retrieveFile(share, path + name.filename, temp_fh)
                                 temp_fh.seek(0)
                                 Utils.writeFile(temp_fh.getvalue(), outfile)
-                                self.display.debug("_____    Share[" + share + "] =" + path + name.filename)
-                        except re.error:
-                            pass
-                            #self.display.debug("Invalid File Pattern --> %s <--" % pattern) 
+                                self.display.debug(f"_____    Share[{share}] ={path}{name.filename}")
         except:
             self.display.debug('### can not access the resource')
 
@@ -66,78 +66,43 @@ class scan_searchsmbshare(actionModule):
 
     def searchTarget(self, host, username, password, domainname):
         success = False
-
         try:
-            self.display.debug('### Analyzing system: ' + host)
-            # parameterize an smb connection with a system
-            conn = SMBConnection(username,
-                                 password,
-                                 'enumerator',
-                                 host,
-                                 domainname,
-                                 use_ntlm_v2=True,
-                                 sign_options=SMBConnection.SIGN_WHEN_SUPPORTED,
-                                 is_direct_tcp=True)
+            self.display.debug(f'### Analyzing system: {host}')
+            conn = SMBConnection(username, password, 'enumerator', host, domainname, use_ntlm_v2=True,
+                                 sign_options=SMBConnection.SIGN_WHEN_SUPPORTED, is_direct_tcp=True)
 
-            # establish the actual connection
-            connected = conn.connect(host, 445)
-            if connected:
+            if connected := conn.connect(host, 445):
                 success = True
-
                 try:
-                    Response = conn.listShares(timeout=30)  # obtain a list of shares
-                    self.display.debug('Shares on: ' + host)
-                    for i in range(len(Response)):  # iterate through the list of shares
-                        self.display.debug("  Share[" + str(i) + "] =" + str(Response[i].name))
+                    Response = conn.listShares(timeout=30)
+                    self.display.debug(f'Shares on: {host}')
+                    for i in range(len(Response)):
+                        self.display.debug(f"  Share[{str(i)}] ={str(Response[i].name)}")
                         self.searchDir(host, conn, Response[i].name, '/')
-#                        try:
-#                            # list the files on each share (recursivity?)
-#                            Response2 = conn.listPath(Response[i].name, '/', timeout=30)
-#                            self.display.debug('    Files on: ' + host + '/' + "  Share[" + str(i) + "] =" + str(Response[i].name))
-#                            for i in range(len(Response2)):
-#                                for pattern in self.filepatterns:
-#                                    try:
-#                                        re.compile(pattern)
-#                                        result = re.match(pattern, Response2[i].filename)
-#                                        if (result):
-#                                            # TODO
-#                                            # host.download(fpath, self.config["proofsDir"] + ip + fpath.replace("/", "_"))
-#                                            self.display.debug("    File[" + str(i) + "] =" + str(Response2[i].filename))
-#                                    except re.error:
-#                                        self.display.debug("Invalid File Pattern --> %s <--" % pattern) 
-#                        except:
-#                            self.display.error('### can not access the resource')
-                except:
+                except Exception:
                     self.display.debug('### can not list shares')
         except:
-            self.display.debug('### can not access the system (%s) (%s) (%s) (%s)' % (host, username, password, domainname))
+            self.display.debug(f'### can not access the system ({host}) ({username}) ({password}) ({domainname})')
 
         return success
 
     def process(self):
-        # load any targets we are interested in
         self.getTargets()
-
-        # loop over each target
         for t in self.targets:
-            # test for NULL authentication first
             if not self.seentarget(t):
                 self.addseentarget(t)
                 self.searchTarget(t, '', '', '')
-
-            # test for any local users
             for user in self.getUsers(t):
-                passwords = kb.get(['creds/host/' + t + '/username/' + user + '/password'])
+                passwords = KeyStore.get([f'creds/host/{t}/username/{user}/password'])
+
                 for password in passwords:
                     if not self.seentarget(t + user + password):
                         self.addseentarget(t + user + password)
                         self.searchTarget(t, user, password, "")
-
-            # test for any domain users
-            domains = kb.get("host/" + t + "/domain")
+            domains = KeyStore.get(f"host/{t}/domain")
             for domain in domains:
                 for user in self.getDomainUsers(domain):
-                    passwords = kb.get(['creds/domain/' + t + '/username/' + user + '/password'])
+                    passwords = KeyStore.get([f'creds/domain/{t}/username/{user}/password'])
                     for password in passwords:
                         if not self.seentarget(t + user + password + domain):
                             self.addseentarget(t + user + password + domain)

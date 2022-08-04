@@ -1,6 +1,6 @@
-[![Github Release Version](https://img.shields.io/github/release/moosedojo/apt2.svg)](https://github.com/MooseDojo/apt2/releases)
-[![Python 2.6-2.7](https://img.shields.io/badge/Python-2.6--2.7-yellow.svg)](http://www.python.org/download/)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/tatanus/apt2/master/LICENSE.txt)
+[![Github Release Version](https://img.shields.io/github/release/cqr-cryeye-forks/apt2.svg)](https://github.com/cqr-cryeye-forks/apt2/releases)
+[![Python 3.10](https://img.shields.io/badge/Python-3.10-green.svg)](http://www.python.org/download/)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/cqr-cryeye-forks/apt2/master/LICENSE.txt)
 
 [![DEFCON 24 Demolabs](https://img.shields.io/badge/DEFCON%2024-Demo%20Labs-red.svg)](https://www.defcon.org/html/defcon-24/dc-24-demolabs.html)
 
@@ -25,14 +25,14 @@
 
  An Automated Penetration Testing Toolkit
 ```
-This tool will perform an NMap scan, or import the results of a scan from Nexpose, Nessus, or NMap. The processesd results will be used to launch exploit and enumeration modules according to the configurable Safe Level and enumerated service information.
+This tool will perform an NMap scan, or import the results of a scan from Nexpose, Nessus, or NMap. The processed results will be used to launch exploit and enumeration modules according to the configurable Safe Level and enumerated service information.
 
 All module results are stored on localhost and are part of APT2's Knowledge Base (KB). The KB is accessible from within the application and allows the user to view the harvested results of an exploit module.
 
 ***NOTE:*  APT2 is currently only tested on Linux based OSes.  If you can confirm that it works on other OSes, please let us know.**
 
 ## Current External Program/Script Dependencies
-To make full use of all of APT2's modules, the following external dependencies should be install on your system:
+To make full use of all of APT2's modules, the following external dependencies should be installed on your system:
 
 convert, dirb, hydra, java, jexboss, john, ldapsearch, msfconsole, nmap, nmblookup, phantomjs, responder, rpcclient, secretsdump.py, smbclient, snmpwalk, sslscan, xwd
 
@@ -50,16 +50,16 @@ Configure the number of the threads APT2 will use.
 
 ## Run:
 #### No Options:
-`python apt2.py`
+`python3 apt2.py`
 #### With Configuration File
-`python apt2.py -C <config.txt>`
+`python3 apt2.py -C <config.txt>`
 #### Import Nexpose, Nessus, or NMap XML
-`python apt2.py -f <nmap.xml>`
+`python3 apt2.py -f <nmap.xml>`
 #### Specify Target Range to Start
-`python apt2.py --target 192.168.1.0/24`
+`python3 apt2.py --target 192.168.1.0/24`
 
 ## Safe Level
-Safe levels indicate how safe a module is to run againsts a target. The scale runs from 1 to 5 with 5 being the safest. The default configuration uses a Safe Level of 4 but can be set with the `-s` or `--safelevel` command line flags.
+Safe levels indicate how safe a module is to run against a target. The scale runs from 1 to 5 with 5 being the safest. The default configuration uses a Safe Level of 4 but can be set with the `-s` or `--safelevel` command line flags.
 
 ## Usage:
 ```
@@ -74,7 +74,7 @@ optional arguments:
                         set min safe level for modules. 0 is unsafe and 5 is
                         very safe. Default is 4
   -x EXCLUDE_TYPES, --exclude EXCLUDE_TYPES
-                        specify a comma seperatec list of module types to
+                        specify a comma seperated list of module types to
                         exclude from running
 
 inputs:

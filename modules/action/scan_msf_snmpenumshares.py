@@ -1,11 +1,10 @@
 import re
 
-from core.msfActionModule import msfActionModule
-from core.keystore import KeyStore as kb
-from core.utils import Utils
+from core.keystore import KeyStore
+from core.msfActionModule import MsfActionModule
 
 
-class scan_msf_snmpenumshares(msfActionModule):
+class scan_msf_snmpenumshares(MsfActionModule):
     def __init__(self, config, display, lock):
         super(scan_msf_snmpenumshares, self).__init__(config, display, lock)
         self.triggers = ["snmpCred"]
@@ -17,7 +16,7 @@ class scan_msf_snmpenumshares(msfActionModule):
 
     def getTargets(self):
         # we are interested only in the hosts that have UDP 161 open
-        self.targets = kb.get('vuln/host/*/snmpCred')
+        self.targets = KeyStore.get('vuln/host/*/snmpCred')
 
     def process(self):
         # load any targets we are interested in
@@ -31,23 +30,18 @@ class scan_msf_snmpenumshares(msfActionModule):
                     # add the new IP to the already seen list
                     self.addseentarget(t)
 
-
-                    comStrings = kb.get("vuln/host/" + t + "/snmpCred/communityString")
+                    comStrings = KeyStore.get(f"vuln/host/{t}/snmpCred/communityString")
                     for comString in comStrings:
-                        cmd = {
-                                'config':[
-                                        "use auxiliary/scanner/snmp/snmp_enumshares",
-                                        "set RHOSTS %s" % t,
-                                        "set COMMUNITY %s" % comString
-                                    ],
-                                'payload':'none'}
-                        result, outfile = self.msfExec(t, cmds)
+                        cmd = {'config': ["use auxiliary/scanner/snmp/snmp_enumshares", f"set RHOSTS {t}",
+                                          f"set COMMUNITY {comString}"], 'payload': 'none'}
+
+                        result, outfile = self.execute_msf(t, cmd)
 
                         #  Don't need to parse out IP, we are running module one IP at a time
                         # Just find lines with  -  and pull out share name
                         parts = re.findall(".* - .*", result)
                         for part in parts:
                             sharename = (part.split('-')[0]).strip()
-                            kb.add("share/smb/" + t + "/" + sharename)
+                            KeyStore.add(f"share/smb/{t}/{sharename}")
 
         return

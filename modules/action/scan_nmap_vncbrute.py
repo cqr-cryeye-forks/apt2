@@ -1,10 +1,10 @@
 try:
-    import xml.etree.cElementTree as ET
+    import xml.etree.cElementTree as ElementTree
 except ImportError:
-    import xml.etree.ElementTree as ET
+    import xml.etree.ElementTree as ElementTree
 from core.actionModule import actionModule
-from core.keystore import KeyStore as kb
-from core.mynmap import mynmap
+from core.keystore import KeyStore
+from core.mynmap import MyNmap
 
 
 class scan_nmap_vncbrute(actionModule):
@@ -20,34 +20,31 @@ class scan_nmap_vncbrute(actionModule):
         self.safeLevel = 5
 
     def getTargets(self):
-        self.targets = kb.get('port/tcp/5800', 'port/tcp/5900')
+        self.targets = KeyStore.get('port/tcp/5800', 'port/tcp/5900')
 
     def myProcessPortScript(self, host, proto, port, script, outfile):
-        outfile = outfile + ".xml"
         scriptid = script.attrib['id']
-        output = script.attrib['output']
         if scriptid == "vnc-brute":
+            outfile = f"{outfile}.xml"
+            output = script.attrib['output']
             if "No authentication required" in output:
-                self.addVuln(host, "VNCNoAuth", {"port":port,"message":"No authentication required","output": outfile.replace("/", "%2F")})
+                self.addVuln(host, "VNCNoAuth", {"port": port, "message": "No authentication required",
+                                                 "output": outfile.replace("/", "%2F")})
                 self.fire("VNCNoAuth")
             for elem in script.iter('elem'):
                 if elem.attrib['key'] == "password":
-                    self.addVuln(host, "VNCBrutePass", {"port":portnum, "password":elem.text})
+                    self.addVuln(host, "VNCBrutePass", {"port": port, "password": elem.text})
                     self.fire("VNCBrutePass")
 
     def process(self):
-        # load any targets we are interested in
         self.getTargets()
-
-        # loop over each target
         for t in self.targets:
-            # verify we have not tested this host before
             if not self.seentarget(t):
-                # add the new IP to the already seen list
                 self.addseentarget(t)
-                self.display.verbose(self.shortName + " - Connecting to " + t)
-                # run nmap
-                n = mynmap(self.config, self.display, portScriptFunc=self.myProcessPortScript)
-                scan_results = n.run(target=t, flags="--script vnc-brute", ports="5800,5900", vector=self.vector, filetag=t + "_VNCBRUTE")
+                self.display.verbose(f"{self.shortName} - Connecting to {t}")
+                n = MyNmap(self.config, self.display, port_script_func=self.myProcessPortScript)
+
+                scan_results = n.run(target=t, flags="--script vnc-brute", ports="5800,5900", vector=self.vector,
+                                     file_tag=f"{t}_VNCBRUTE")
 
         return

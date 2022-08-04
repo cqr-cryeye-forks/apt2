@@ -2,11 +2,11 @@ import time
 from multiprocessing.pool import ThreadPool
 
 from core.events import EventHandler
-from core.keystore import KeyStore as kb
-from core.packetcap import pktcap
+from core.keystore import KeyStore
+from core.packetcap import PktCapture
 
 class actionModule(object):
-    seentargets = dict()
+    seen_targets = dict()
 
     def __init__(self, config, display, lock):
         self.display = display
@@ -68,12 +68,12 @@ class actionModule(object):
     def getVectorDepth(self):
         return len(self.vector.split('-'))
 
-    def pktCap(self, filter="", packetcount=10, timeout=60, srcip="", dstip=""):
+    def pktCap(self, filter_str="", packetcount=10, timeout=60, srcip="", dstip=""):
         pool = ThreadPool(processes=1)
-        p = pktcap()
+        p = PktCapture()
 
         # create new thread/process for the packet capture
-        async_result = pool.apply_async(p.capture, (filter, timeout, packetcount, srcip, dstip,))
+        async_result = pool.apply_async(p.capture, (filter_str, timeout, packetcount, srcip, dstip,))
 
         # slepp for a second to allow everything to get set up
         time.sleep(1)
@@ -88,11 +88,11 @@ class actionModule(object):
     def addseentarget(self, target):
         self.lock.acquire()
 
-        if not self.getShortName() in actionModule.seentargets:
-            actionModule.seentargets[self.getShortName()] = list()
+        if not self.getShortName() in actionModule.seen_targets:
+            actionModule.seen_targets[self.getShortName()] = list()
 
-        if not target in actionModule.seentargets[self.getShortName()]:
-            actionModule.seentargets[self.getShortName()].append(target)
+        if not target in actionModule.seen_targets[self.getShortName()]:
+            actionModule.seen_targets[self.getShortName()].append(target)
         self.lock.release()
 
     def seentarget(self, target):
@@ -100,10 +100,10 @@ class actionModule(object):
 
         # set default value
         value = False
-        # check if "shortname" is a key in seentargets
-        if self.getShortName() in actionModule.seentargets:
+        # check if "shortname" is a key in seen_targets
+        if self.getShortName() in actionModule.seen_targets:
             # check if target is an element in the list
-            if target in actionModule.seentargets[self.getShortName()]:
+            if target in actionModule.seen_targets[self.getShortName()]:
                 value = True
 
         self.lock.release()
@@ -117,16 +117,16 @@ class actionModule(object):
         return string
 
     def getDomainUsers(self, domain):
-        return kb.get('creds/domain/' + domain + '/username/')
+        return KeyStore.get('creds/domain/' + domain + '/username/')
 
     def getUsers(self, host):
-        return kb.get('creds/host/' + host + '/username/')
+        return KeyStore.get('creds/host/' + host + '/username/')
 
     def getHostnames(self, host):
-        return kb.get('host/' + host + '/hostname/')
+        return KeyStore.get('host/' + host + '/hostname/')
 
     def addVuln(self, host, vuln, details={}):
-        self.display.error("VULN [%s] Found on [%s]" % (vuln,host))
-        kb.add("vuln/host/" + host + "/" + vuln + "/module/" + self.shortName + "/" + self.vector)
+        self.display.error("VULN [%s] Found on [%s]" % (vuln, host))
+        KeyStore.add("vuln/host/" + host + "/" + vuln + "/module/" + self.shortName + "/" + self.vector)
         for key in details:
-            kb.add("vuln/host/" + host + "/" + vuln + "/details/" + key + "/" + details[key])
+            KeyStore.add("vuln/host/" + host + "/" + vuln + "/details/" + key + "/" + details[key])
