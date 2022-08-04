@@ -30,7 +30,7 @@ class MyNmap:
             proofsDir = self.config["proofsDir"]
         file_tag = file_tag.replace("/", "_").replace(" ", "_")
         self.outfile = f"{proofsDir}NMAP-{file_tag}-{Utils.getRandStr(10)}"
-        command = self.config["nmap"] + " " + flags + " -p " + ports + " -oA " + self.outfile + " " + target
+        command = f"nmap {flags} -p {ports} -oA {self.outfile} {target}"
 
         tmp_results = Utils.execWait(command)
         self.display.output(f"Scan file saved to [{self.outfile}]")

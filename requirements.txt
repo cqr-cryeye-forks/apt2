@@ -5,4 +5,4 @@ cython
 pysmb==1.2.8
 yattag==1.14.0
 impacket~=0.10.0
-
+convert==0.1.2
