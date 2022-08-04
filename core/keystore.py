@@ -84,7 +84,7 @@ class KeyStore:
         dump = ""
         with KeyStore.db.cursor() as cursor:
             for key, values in cursor:
-                values = ast.literal_eval(values)
+                values = ast.literal_eval(values.decode('utf-8'))
                 for value in values:
                     dump += "\n" + key + "/" + value
         return dump

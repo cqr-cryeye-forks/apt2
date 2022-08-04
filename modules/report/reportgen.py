@@ -64,10 +64,10 @@ class reportgen(ReportModule):
         numvulnerabilities = 0
         for s in services:
             # TODO: Could make this a dict and do counts by specific services/port
-            numserv = len(KeyStore.get('service/' + s + '/host'))
+            numserv = len(KeyStore.get(f'service/{s}/host'))
             numservices = numservices + numserv
         for t in self.targets:
-            numvulnerabilities = numvulnerabilities + len(KeyStore.get('host/' + t + '/vuln'))
+            numvulnerabilities = numvulnerabilities + len(KeyStore.get(f'host/{t}/vuln'))
         doc.asis('<!DOCTYPE html>')
         with tag('html'):
             with tag('head'):
@@ -161,16 +161,16 @@ class reportgen(ReportModule):
                             with tag('div', klass='hostsection'):
                                 with tag('h3'):
                                     # Output IP address - Known Hostname
-                                    text(t)
+                                    text(str(t))
                                 # List Services
-                                hostservices = KeyStore.get('service/*/host/' + t)
+                                hostservices = KeyStore.get(f'service/*/host/{t}')
                                 if len(hostservices) > 0:
                                     with tag('b', klass='hostsection'):
                                         text('Services')
                                     with tag('ul'):
                                         for s in hostservices:
-                                            tcpports = KeyStore.get('service/' + s + '/host/' + t + '/tcpport')
-                                            udpports = KeyStore.get('service/' + s + '/host/' + t + '/udpport')
+                                            tcpports = KeyStore.get('service/' + s + '/host/' + str(t) + '/tcpport')
+                                            udpports = KeyStore.get('service/' + s + '/host/' + str(t) + '/udpport')
                                             ports = ""
                                             for p in tcpports:
                                                 if ports == "":
@@ -185,7 +185,7 @@ class reportgen(ReportModule):
                                             with tag('li'):
                                                 text(s + " - " + ports)
                                 # List Domains
-                                hostdomains = KeyStore.get('domain/*/host/' + t)
+                                hostdomains = KeyStore.get('domain/*/host/' + str(t))
                                 if len(hostdomains) > 0:
                                     with tag('b', klass='hostsection'):
                                         text('Domains/Workgroups')
@@ -194,7 +194,7 @@ class reportgen(ReportModule):
                                             with tag('li'):
                                                 text(s)
                                 # List Users
-                                hostusers = KeyStore.get('host/' + t + '/user')
+                                hostusers = KeyStore.get('host/' + str(t) + '/user')
                                 if len(hostusers) > 0:
                                     with tag('b', klass='hostsection'):
                                         text('Users')
@@ -203,7 +203,7 @@ class reportgen(ReportModule):
                                             with tag('li'):
                                                 text(s)
                                 # List Shares
-                                hostshares = KeyStore.get('host/' + t + '/share')
+                                hostshares = KeyStore.get('host/' + str(t) + '/share')
                                 if len(hostshares) > 0:
                                     with tag('b', klass='hostsection'):
                                         text('Shares')
@@ -213,12 +213,12 @@ class reportgen(ReportModule):
                                                 text(s)
                                                 with tag('ul'):
                                                     # SMB or NFS
-                                                    sharenames = KeyStore.get('host/' + t + '/share/' + s)
+                                                    sharenames = KeyStore.get('host/' + str(t) + '/share/' + s)
                                                     for sn in sharenames:
                                                         with tag('li'):
                                                             text(sn)
                                 # Link to section in Vulnerabilities
-                                hostvulns = KeyStore.get('host/' + t + '/vuln')
+                                hostvulns = KeyStore.get('host/' + str(t) + '/vuln')
                                 if len(hostvulns) > 0:
                                     with tag('b', klass='hostsection'):
                                         text('Vulnerabilities')
@@ -226,17 +226,17 @@ class reportgen(ReportModule):
                                         i = 0
                                         for s in hostvulns:
                                             with tag('li'):
-                                                with tag('a', href='#vuln' + t.replace('.', '') + str(i)):
+                                                with tag('a', href='#vuln' + str(t).replace('.', '') + str(i)):
                                                     i += 1
                                                     text(s)
                                 # List Files
-                                hostfiles = KeyStore.get('host/' + t + '/files')
+                                hostfiles = KeyStore.get('host/' + str(t) + '/files')
                                 if len(hostfiles) > 0:
                                     with tag('b', klass='hostsection'):
                                         text('Output Files')
                                     with tag('ul'):
                                         for s in hostfiles:
-                                            files = KeyStore.get('host/' + t + '/files/' + s)
+                                            files = KeyStore.get('host/' + str(t) + '/files/' + s)
                                             for f in files:
                                                 with tag('li'):
                                                     url = "file://" + f.replace("%2F", "/")
@@ -251,27 +251,27 @@ class reportgen(ReportModule):
                         # For each Host that has listed vulnerabilties
                         for t in self.targets:
                             # For each Vulnerability
-                            hostvulns = KeyStore.get('host/' + t + '/vuln')
+                            hostvulns = KeyStore.get('host/' + str(t) + '/vuln')
                             if len(hostvulns) > 0:
                                 with tag('h3', klass='hostsection'):
                                     # Output IP address - Known Hostname
-                                    text(t)
+                                    text(str(t))
                                 i = 0
                                 for s in hostvulns:
                                     with tag('div', klass='vulndescription'):
                                         # Generate anchor tag to link from host section can be made
-                                        with tag('a', klass='vulnname', id='vuln' + t.replace('.', '') + str(i)):
+                                        with tag('a', klass='vulnname', id='vuln' + str(t).replace('.', '') + str(i)):
                                             i += 1
                                             # Title
                                             text(s)
                                             # Associated Service, Port, IP Address
                                         # If there is a path (NMAP -> FTP Found -> Anonymoous Login) Put it here
-                                        vulnDetails = KeyStore.get("host/" + t + "/vuln/" + s)
+                                        vulnDetails = KeyStore.get("host/" + str(t) + "/vuln/" + s)
                                         for d in vulnDetails:
                                             # Iterate through each section under this vuln (module, vector, message,
                                             # port, etc.)
                                             if d == "output":
-                                                outfile = KeyStore.get("host/" + t + "/vuln/" + s + "/" + d)
+                                                outfile = KeyStore.get("host/" + str(t) + "/vuln/" + s + "/" + d)
                                                 with tag('a', klass='vulndescriptiontitle', ):
                                                     text("Files:")
                                                 with tag('ul'):
@@ -285,7 +285,7 @@ class reportgen(ReportModule):
                                                 # capitals for cases like communityString
                                                 with tag('p', klass='vulndescriptiontitle'):
                                                     text(d)
-                                                detailContents = KeyStore.get("host/" + t + "/vuln/" + s + "/" + d)
+                                                detailContents = KeyStore.get("host/" + str(t) + "/vuln/" + s + "/" + d)
                                                 with tag('ul'):
                                                     for c in detailContents:
                                                         with tag('li', klass='vulndescriptioncontents'):
