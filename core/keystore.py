@@ -31,7 +31,7 @@ class KeyStore:
             values.extend(temp_val for temp_val in temp_vals if left + temp_val + right in KeyStore.db)
         elif item in KeyStore.db:
             values = KeyStore.db[item]
-        return values.decode
+        return values
 
     # =================================================
     # "public" methods
