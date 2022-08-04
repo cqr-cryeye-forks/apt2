@@ -31,7 +31,7 @@ class KeyStore:
             values.extend(temp_val for temp_val in temp_vals if left + temp_val + right in KeyStore.db)
         elif item in KeyStore.db:
             values = KeyStore.db[item]
-        return values
+        return values.decode
 
     # =================================================
     # "public" methods
@@ -47,8 +47,8 @@ class KeyStore:
             key, value = item.rsplit('/', 1)
             value = str(value)
             values = KeyStore._get(key) if key in KeyStore.db else []
-            print(f"{value:=}")
-            print(f"{values:=}")
+            if type(values) is bytes:
+                values = ast.literal_eval(values.decode('utf-8'))
             if value not in values:
                 values.append(value)
                 KeyStore.db[key] = values
@@ -63,7 +63,7 @@ class KeyStore:
             if isinstance(r2, str):
                 r2 = ast.literal_eval(r2)
             result += r2
-        return sorted(set(result)) if result else []
+        return list(sorted(set(result))) if result else []
 
     # remove a given key or value
     @staticmethod
