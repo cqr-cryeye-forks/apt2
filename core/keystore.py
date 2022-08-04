@@ -9,7 +9,7 @@ except ImportError:
 from .utils import Utils
 
 
-class KeyStore(object):
+class KeyStore:
     db = UnQLite()
 
     # =================================================
@@ -29,7 +29,6 @@ class KeyStore(object):
             if isinstance(temp_vals, str):
                 temp_vals = ast.literal_eval(temp_vals)
             values.extend(temp_val for temp_val in temp_vals if left + temp_val + right in KeyStore.db)
-
         elif item in KeyStore.db:
             values = KeyStore.db[item]
         return values
@@ -45,12 +44,11 @@ class KeyStore(object):
         if item not in KeyStore.db:
             KeyStore.db[item] = []
         if item.count('/') > 0:
-            (key, value) = item.rsplit('/', 1)
-            values = []
-            if key in KeyStore.db:
-                values = KeyStore._get(key)
-                if isinstance(values, str):
-                    values = ast.literal_eval(values)
+            key, value = item.rsplit('/', 1)
+            value = str(value)
+            values = KeyStore._get(key) if key in KeyStore.db else []
+            print(f"{value:=}")
+            print(f"{values:=}")
             if value not in values:
                 values.append(value)
                 KeyStore.db[key] = values
