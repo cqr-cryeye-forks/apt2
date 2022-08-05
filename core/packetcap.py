@@ -29,11 +29,11 @@ class PktCapture:
 
             if (srcip != "" or dstip != "") and srcip == "" and (ip_dst == dstip) or (srcip != "" or dstip != "") \
                     and srcip != "" and (ip_src == srcip):
-                results += ">>>> %s\n" % tcp_payload
+                results += f">>>> {tcp_payload}\n"
             elif (srcip != "" or dstip != "") and srcip == "" or srcip != "":
-                results += "<<<< %s\n" % tcp_payload
+                results += f"<<<< {tcp_payload}\n"
             else:
-                results += ">><< %s\n" % tcp_payload
+                results += f">><< {tcp_payload}\n"
         return results
 
 

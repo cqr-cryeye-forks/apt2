@@ -28,7 +28,8 @@ class KeyStore:
             temp_vals = KeyStore.get(left)
             if isinstance(temp_vals, str):
                 temp_vals = ast.literal_eval(temp_vals)
-            values.extend(temp_val for temp_val in temp_vals if left + temp_val + right in KeyStore.db)
+            values.extend(temp_val for temp_val in temp_vals if f"{left}{temp_val}{right}" in KeyStore.db)
+
         elif item in KeyStore.db:
             values = KeyStore.db[item]
         return values
@@ -86,7 +87,7 @@ class KeyStore:
             for key, values in cursor:
                 values = ast.literal_eval(values.decode('utf-8'))
                 for value in values:
-                    dump += "\n" + key + "/" + value
+                    dump += f"\n{key}/{value}"
         return dump
 
     # save keystore to file

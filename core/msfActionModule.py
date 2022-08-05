@@ -32,7 +32,7 @@ class MsfActionModule(actionModule):
             if line == "SLEEP":
                 self.msf.sleep(int(self.config['msfexploitdelay']))
             else:
-                self.msf.execute(line + "\n")
+                self.msf.execute(f"{line}\n")
         if cmds['payload'] in ["none", "win"]:
             pass
         elif cmds['payload'] == "linux":
@@ -40,8 +40,7 @@ class MsfActionModule(actionModule):
             self.msf.execute("set LPORT 4445")
         self.msf.execute("exploit -j\n")
         self.msf.sleep(int(self.config['msfexploitdelay']))
-        outfile = self.config["proofsDir"] + self.shortName + "_" + target + "_" + Utils.getRandStr(10)
-
+        outfile = f'{self.config["proofsDir"]}{self.shortName}_{target}_{Utils.getRandStr(10)}'
         result = self.msf.get_result()
         MyMsf.lock.release()
         Utils.writeFile(result, outfile)

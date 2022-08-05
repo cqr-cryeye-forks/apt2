@@ -66,7 +66,7 @@ class MyNmap:
             if addrType == "ipv4":
                 ip = ip_tmp
                 KeyStore.add(f'host/{ip}')
-                EventHandler.fire("newIP" + ":" + self.vector)
+                EventHandler.fire(f"newIP:{self.vector}")
         if host.find('hostname'):
             for hostname in host.find('hostnames').findall('hostname'):
                 name = hostname.attrib['name']

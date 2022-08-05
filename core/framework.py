@@ -18,7 +18,7 @@ from .mynmap import MyNmap
 from .utils import Utils, Display
 
 
-class Framework():
+class Framework:
     def __init__(self):
         self.display = Display()
         self.module_lock = RLock()
@@ -56,7 +56,7 @@ class Framework():
         }
 
         self.setup_dirs()
-        self.kbSaveFile = self.config["proofsDir"] + "KB-" + Utils.getRandStr(10) + ".save"
+        self.kbSaveFile = f'{self.config["proofsDir"]}KB-{Utils.getRandStr(10)}.save'
 
         self.thread_count_thread = None
         self.key_event_thread = None
@@ -75,17 +75,17 @@ class Framework():
         self.update_dirs("reports/", "reportDir", "logs/", "logDir")
         self.display.setLogPath(self.config["logDir"])
         self.update_dirs("proofs/", "proofsDir", "tmp/", "tmpDir")
-        if not os.path.isdir(self.config["pkgDir"] + "misc/"):
-            os.makedirs(self.config["pkgDir"] + "misc/")
-        self.config["miscDir"] = self.config["pkgDir"] + "misc/"
+        if not os.path.isdir(f'{self.config["pkgDir"]}misc/'):
+            os.makedirs(f'{self.config["pkgDir"]}misc/')
+        self.config["miscDir"] = f'{self.config["pkgDir"]}misc/'
 
     def update_dirs(self, arg0, arg1, arg2, arg3):
-        if not os.path.isdir(self.config["outDir"] + arg0):
-            os.makedirs(self.config["outDir"] + arg0)
-        self.config[arg1] = self.config["outDir"] + arg0
-        if not os.path.isdir(self.config["outDir"] + arg2):
-            os.makedirs(self.config["outDir"] + arg2)
-        self.config[arg3] = self.config["outDir"] + arg2
+        if not os.path.isdir(f'{self.config["outDir"]}{arg0}'):
+            os.makedirs(f'{self.config["outDir"]}{arg0}')
+        self.config[arg1] = f'{self.config["outDir"]}{arg0}'
+        if not os.path.isdir(f'{self.config["outDir"]}{arg2}'):
+            os.makedirs(f'{self.config["outDir"]}{arg0}')
+        self.config[arg3] = f'{self.config["outDir"]}{arg0}'
 
     # ----------------------------
     # CTRL-C display and exit
@@ -195,10 +195,10 @@ class Framework():
             temp1 = self.config
             temp2 = Utils.loadConfig(self.config["config_filename"])
             self.config = dict(list(temp2.items()) + list(temp1.items()))
-        elif Utils.isReadable(self.config["miscDir"] + "default.cfg"):
+        elif Utils.isReadable(f'{self.config["miscDir"]}default.cfg'):
             self.display.verbose("a CONFIG FILE was not specified...  defaulting to [default.cfg]")
             temp1 = self.config
-            temp2 = Utils.loadConfig(self.config["miscDir"] + "default.cfg")
+            temp2 = Utils.loadConfig(f'{self.config["miscDir"]}default.cfg')
             self.config = dict(list(temp2.items()) + list(temp1.items()))
         else:
             # someone must have removed it!
@@ -416,13 +416,13 @@ class Framework():
         if self.config["scan_target"]:
             nm = MyNmap(self.config, self.display)
             nm.run(target=self.config["scan_target"], ports=self.config["scan_port_range"],
-                   flags="-s" + self.config["scan_type"] + " " + self.config["scan_flags"], vector="nmapScan",
+                   flags=f'-s {self.config["scan_type"]} {self.config["scan_flags"]}', vector="nmapScan",
                    file_tag="nmapScan" + self.config["scan_target"])
         elif self.config["scan_target_list"]:
             nm = MyNmap(self.config, self.display)
             nm.run(target="", ports=self.config["scan_port_range"],
-                   flags="-s" + self.config["scan_type"] + " " + self.config["scan_flags"] + " -iL " + self.config[
-                       "scan_target_list"], vector="nmapScan")
+                   flags=f'-s {self.config["scan_type"]} {self.config["scan_flags"]} '
+                         f'-iL {self.config["scan_target_list"]}', vector="nmapScan")
         # begin main loop
         self.key_event_thread = KeyEventThread(self.display)
         self.key_event_thread.start()
@@ -454,7 +454,7 @@ class Framework():
             self.display.output("Set: (s)can type, extra (f)lags, (p)ort range, (t)arget, target (l)ist, (m)ain menu")
 
             self.display.output()
-            userChoice = self.display.input("Choose An Option: ")
+            userChoice = self.display.input_string("Choose An Option: ")
             if userChoice == "s":
                 self.config["scan_type"] = self.display.input_string("Choose S, T, U, ST, SU, TU: ")
             elif userChoice == "f":
@@ -515,7 +515,7 @@ class Framework():
                 searchString = searches[depth]
             elif search == "a":
                 text = self.display.input_string("Input new record: ")
-                KeyStore.add(f"{searchString}/" + text.replace("/", "|"))
+                KeyStore.add(f'{searchString}/{text.replace("/", "|")}')
             elif search == "d":
                 choice = self.display.input_string("Choose record to remove: ")
                 try:
@@ -528,10 +528,10 @@ class Framework():
             elif search == "i":
                 self.display.error("Not implemented yet")
             elif search == "t":
-                tempPath = self.config["tmpDir"] + "KBRESULTS-" + Utils.getRandStr(10) + ".txt"
+                tempPath = f'{self.config["tmpDir"]}KBRESULTS-{Utils.getRandStr(10)}.txt'
                 text = ""
                 for line in results:
-                    text = text + line + "\n"
+                    text += f"{line}\n"
                 Utils.writeFile(text, tempPath)
                 self.display.output(f"Results written to: {tempPath}")
             elif re.match("([a-zA-Z0-9.*]*/)+([a-zA-Z0-9.*]*)", search) is not None:
@@ -566,19 +566,19 @@ class Framework():
         if not msf.is_authenticated():
             self.display.error("Could not connect to Metasploit msgrpc service with the following parameters:")
 
-            self.display.error(f"     host     = [{self.config['msfhost']}]")
-            self.display.error(f"     port     = [{self.config['msfport']}]")
-            self.display.error(f"     user     = [{self.config['msfuser']}]")
-            self.display.error(f"     password = [{self.config['msfpass']}]")
+            self.display.error(f"\thost     = [{self.config['msfhost']}]")
+            self.display.error(f"\tport     = [{self.config['msfport']}]")
+            self.display.error(f"\tuser     = [{self.config['msfuser']}]")
+            self.display.error(f"\tpassword = [{self.config['msfpass']}]")
             self.display.alert("If you wish to make use of Metasploit modules within APT2, please update the config "
                                "file with the appropriate settings.")
 
             self.display.error("Connect by launching msfconsole and then issue the following commands:")
 
-            self.display.error(("     load msgrpc User=" + self.config['msfuser'] + " Pass=" + self.config[
-                'msfpass'] + " ServerPort=" + self.config['msfport']))
+            self.display.error(f'\tload msgrpc User={self.config["msfuser"]} Pass={self.config["msfpass"]} '
+                               f'ServerPort={self.config["msfport"]}')
 
-            self.display.error("     resource " + self.config["miscDir"] + "apt2.rc")
+            self.display.error(f'\tresource {self.config["miscDir"]}apt2.rc')
             self.display.output()
 
     def modulesLoaded(self):
@@ -593,7 +593,7 @@ class Framework():
         self.display.alert(f"The KnowledgeBase will be auto saved to : {self.kbSaveFile}")
         self.display.alert(f"Local IP is set to : {self.config['lhost']}")
         self.display.alert(
-            "      If you would rather use a different IP, then specify it via the [--ip <ip>] argument.")
+            "\t If you would rather use a different IP, then specify it via the [--ip <ip>] argument.")
 
     # ==========================================================================================
     # ==========================================================================================

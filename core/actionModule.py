@@ -5,6 +5,7 @@ from core.events import EventHandler
 from core.keystore import KeyStore
 from core.packetcap import PktCapture
 
+
 class actionModule(object):
     seen_targets = dict()
 
@@ -58,12 +59,12 @@ class actionModule(object):
 
     def go(self, vector):
         self.vector = vector
-        self.display.verbose("-> Running : " + self.getTitle())
-        self.display.debug("---> " + self.getDescription())
+        self.display.verbose(f"-> Running : {self.getTitle()}")
+        self.display.debug(f"---> {self.getDescription()}")
         return self.process()
 
     def fire(self, trigger):
-        EventHandler.fire(trigger + ":" + self.vector + "-" + self.shortName)
+        EventHandler.fire(f"{trigger}:{self.vector}-{self.shortName}")
 
     def getVectorDepth(self):
         return len(self.vector.split('-'))
@@ -81,52 +82,41 @@ class actionModule(object):
         return async_result
 
     def getPktCap(self, obj):
-        if (obj):
-            return obj.get()
-        return ""
+        return obj.get() if obj else ""
 
     def addseentarget(self, target):
         self.lock.acquire()
-
-        if not self.getShortName() in actionModule.seen_targets:
-            actionModule.seen_targets[self.getShortName()] = list()
-
-        if not target in actionModule.seen_targets[self.getShortName()]:
+        if self.getShortName() not in actionModule.seen_targets:
+            actionModule.seen_targets[self.getShortName()] = []
+        if target not in actionModule.seen_targets[self.getShortName()]:
             actionModule.seen_targets[self.getShortName()].append(target)
         self.lock.release()
 
     def seentarget(self, target):
         self.lock.acquire()
-
-        # set default value
-        value = False
-        # check if "shortname" is a key in seen_targets
-        if self.getShortName() in actionModule.seen_targets:
-            # check if target is an element in the list
-            if target in actionModule.seen_targets[self.getShortName()]:
-                value = True
+        value = self.getShortName() in actionModule.seen_targets and target in actionModule.seen_targets[
+            self.getShortName()]
 
         self.lock.release()
-
         return value
 
     def print_dict(self, d):
-        string = ""
-        for key, value in d:
-            string += "%s: %s\n" % (key, value)
-        return string
+        return "".join(f"{key}: {key}\n" for key, value in d)
 
     def getDomainUsers(self, domain):
-        return KeyStore.get('creds/domain/' + domain + '/username/')
+        return KeyStore.get(f'creds/domain/{domain}/username/')
 
     def getUsers(self, host):
-        return KeyStore.get('creds/host/' + host + '/username/')
+        return KeyStore.get(f'creds/host/{host}/username/')
 
     def getHostnames(self, host):
-        return KeyStore.get('host/' + host + '/hostname/')
+        return KeyStore.get(f'host/{host}/hostname/')
 
-    def addVuln(self, host, vuln, details={}):
-        self.display.error("VULN [%s] Found on [%s]" % (vuln, host))
-        KeyStore.add("vuln/host/" + host + "/" + vuln + "/module/" + self.shortName + "/" + self.vector)
+    def addVuln(self, host, vuln, details=None):
+        if details is None:
+            details = {}
+        self.display.error(f"VULN [{vuln}] Found on [{host}]")
+        KeyStore.add(f"vuln/host/{host}/{vuln}/module/{self.shortName}/{self.vector}")
+
         for key in details:
-            KeyStore.add("vuln/host/" + host + "/" + vuln + "/details/" + key + "/" + details[key])
+            KeyStore.add(f"vuln/host/{host}/{vuln}/details/{key}/{details[key]}")
