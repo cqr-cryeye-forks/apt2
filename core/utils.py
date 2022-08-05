@@ -91,7 +91,7 @@ class Utils:
         return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
     @staticmethod
-    def loadConfig(filename):
+    def load_config(filename):
         config = {}
         if Utils.isReadable(filename):
             parser = configparser.SafeConfigParser()

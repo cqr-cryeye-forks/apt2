@@ -84,8 +84,8 @@ class Framework:
             os.makedirs(f'{self.config["outDir"]}{arg0}')
         self.config[arg1] = f'{self.config["outDir"]}{arg0}'
         if not os.path.isdir(f'{self.config["outDir"]}{arg2}'):
-            os.makedirs(f'{self.config["outDir"]}{arg0}')
-        self.config[arg3] = f'{self.config["outDir"]}{arg0}'
+            os.makedirs(f'{self.config["outDir"]}{arg2}')
+        self.config[arg3] = f'{self.config["outDir"]}{arg2}'
 
     # ----------------------------
     # CTRL-C display and exit
@@ -178,27 +178,27 @@ class Framework:
         self.config['lhost'] = args.lhost
         for f in args.inputs:
             if Utils.isReadable(f):
-                if type := self.idFileType(f):
-                    if type in self.inputs:
-                        self.inputs[type].append(f)
+                if file_type := self.id_file_type(f):
+                    if file_type in self.inputs:
+                        self.inputs[file_type].append(f)
                     else:
-                        self.inputs[type] = [f]
+                        self.inputs[file_type] = [f]
             else:
                 print(f"Can not access [{f}]")
 
     # ----------------------------
     # Load config setting from the config file
     # ----------------------------
-    def loadConfig(self):
+    def load_config(self):
         # does config file exist?
         if ("config_filename" in self.config) and (self.config["config_filename"] is not None):
             temp1 = self.config
-            temp2 = Utils.loadConfig(self.config["config_filename"])
+            temp2 = Utils.load_config(self.config["config_filename"])
             self.config = dict(list(temp2.items()) + list(temp1.items()))
         elif Utils.isReadable(f'{self.config["miscDir"]}default.cfg'):
             self.display.verbose("a CONFIG FILE was not specified...  defaulting to [default.cfg]")
             temp1 = self.config
-            temp2 = Utils.loadConfig(f'{self.config["miscDir"]}default.cfg')
+            temp2 = Utils.load_config(f'{self.config["miscDir"]}default.cfg')
             self.config = dict(list(temp2.items()) + list(temp1.items()))
         else:
             # someone must have removed it!
@@ -221,13 +221,13 @@ class Framework:
     # ----------------------------
     # Load Initial Events
     # ----------------------------
-    def populateInitEvents(self):
+    def populate_init_events(self):
         EventHandler.fire("always:initial")
 
     # ----------------------------
     # look for and load and modules (input/action)
     # ----------------------------
-    def loadModules(self):
+    def load_modules(self):
         module_dict = {}
         path = os.path.join(self.config["pkgDir"], 'modules/input')
         for dir_path, dir_names, filenames in os.walk(path):
@@ -345,7 +345,7 @@ class Framework:
     # ----------------------------
     # Attempt to identify the type of input file
     # ----------------------------
-    def idFileType(self, filename):
+    def id_file_type(self, filename):
         # load and read first 4096 bytes of file
         with open(filename, 'rb') as file:
             data = file.read(4086).decode()
@@ -373,7 +373,7 @@ class Framework:
     # ----------------------------
     # Main Menu
     # ---------------------------- 
-    def displayMenu(self):
+    def display_menu(self):
         if self.config["bypass_menu"]:
             self.runScan()  # Skip first trip through menu and go straight into a scan using whatever arguments were
             # passed
@@ -390,7 +390,7 @@ class Framework:
         self.display.output("4. Quit")
         self.display.output()
         try:
-            userChoice = int(self.display.input("Select an option: "))
+            userChoice = int(self.display.input_string("Select an option: "))
             print(f"[{userChoice}]")
             if userChoice == 1:
                 # Execute scan and begin process
@@ -501,12 +501,10 @@ class Framework:
                 self.display.output("3. osint")
                 results = ["host", "service", "domain", "osint"]
                 i = 4
-            self.display.output()
-            self.display.output("Choose From Above Or: (a)dd, (d)elete, (b)ack, (m)ain menu, (i)mport, "
-                                "write to (t)emp file")
-
-            self.display.output()
+            self.display.output(
+                "\nChoose From Above Or: (a)dd, (d)elete, (b)ack, (m)ain menu, (i)mport, write to (t)emp file\n")
             search = self.display.input_string("Select option or enter custom search path: ")
+
             if search == "m":
                 break
             elif search == "b":
@@ -529,9 +527,7 @@ class Framework:
                 self.display.error("Not implemented yet")
             elif search == "t":
                 tempPath = f'{self.config["tmpDir"]}KBRESULTS-{Utils.getRandStr(10)}.txt'
-                text = ""
-                for line in results:
-                    text += f"{line}\n"
+                text = "".join(f"{line}\n" for line in results)
                 Utils.writeFile(text, tempPath)
                 self.display.output(f"Results written to: {tempPath}")
             elif re.match("([a-zA-Z0-9.*]*/)+([a-zA-Z0-9.*]*)", search) is not None:
@@ -607,8 +603,8 @@ class Framework:
         # os.system('clear')
         self.parse_parameters(argv)
         self.display_banner()  # Print banner first and all messages after
-        self.loadConfig()  # load config
-        modules_dict = self.loadModules()  # load input/action modules
+        self.load_config()  # load config
+        modules_dict = self.load_modules()  # load input/action modules
         self.modulesLoaded()
 
         if self.config["list_modules"]:
@@ -628,7 +624,7 @@ class Framework:
                         _instance.go(file)
 
         # populate any initial events
-        self.populateInitEvents()
+        self.populate_init_events()
 
         # begin menu loop
         self.thread_count_thread = Thread(target=EventHandler.print_thread_count, args=(self.display,))
@@ -636,7 +632,7 @@ class Framework:
         self.runScan()  # Skip first trip through menu and go straight into a scan using whatever arguments were passed
         self.isRunning = False
         #        while self.isRunning:
-        #            self.displayMenu()
+        #            self.display_menu()
 
         if KeyStore:
             KeyStore.save(self.kbSaveFile)
